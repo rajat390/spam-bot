@@ -5,81 +5,43 @@ const app = express()
 app.use(express.json())
 
 const TOKEN = "7797281430:AAEmrvxBnx5y1irjRsZj2P9ymLL-nR6Sc3c"
-const API = `https://api.telegram.org/bot${TOKEN}`
+const TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}`
 
 app.post("/", async (req, res) => {
-  const msg = req.body.message
-  if (!msg || !msg.text) return res.send("ok")
+  const update = req.body
 
-  const chat_id = msg.chat.id
-  const text = msg.text
-  const reply_to = msg.message_id
+  if (!update.message) return res.send("ok")
+  const message = update.message
+  const chat_id = message.chat.id
+  const text = message.text || ""
+  const reply_to = message.message_id
 
   if (text.startsWith("/start")) {
-    return send(chat_id, "👋 Welcome! Use /help to view all commands.", reply_to)
-  }
-
-  if (text.startsWith("/help")) {
-    return send(chat_id,
-      `🛠 Available Commands:
-  /start - Welcome message
-  /help - List commands
-  /text <message> <count> - Send a message N times
-  /spam <word> <count> - Spam a word in one message
-  /interval <message> <count> <seconds> - Send with delay
-  /wave <message> - Typing effect message`, reply_to)
-  }
-
-  if (text.startsWith("/text")) {
-    const args = text.split(" ")
-    const count = parseInt(args.at(-1))
-    const message = args.slice(1, -1).join(" ")
-    if (isNaN(count) || count < 1 || count > 10) {
-      return send(chat_id, "❌ Invalid count. Use: /text Hello 3", reply_to)
+    await sendMessage(chat_id, "👋 Welcome to the bot! Use /text <message> <number> to repeat messages.", reply_to)
+  } else if (text.startsWith("/help")) {
+    await sendMessage(chat_id, "🛠 Commands:\n/start - Welcome Message\n/text <message> <number> - Repeat message\n/help - Command Help", reply_to)
+  } else if (text.startsWith("/text")) {
+    const parts = text.split(" ")
+    if (parts.length < 3) {
+      await sendMessage(chat_id, "❌ Invalid format. Use: /text <message> <number>", reply_to)
+      return res.send("ok")
     }
-    for (let i = 0; i < count; i++) {
-      await send(chat_id, message, reply_to)
+    const number = parseInt(parts[parts.length - 1])
+    if (isNaN(number) || number < 1 || number > 10) {
+      await sendMessage(chat_id, "⚠️ Please enter a number between 1 and 10 at the end.", reply_to)
+      return res.send("ok")
     }
-  }
-
-  if (text.startsWith("/spam")) {
-    const args = text.split(" ")
-    const count = parseInt(args.at(-1))
-    const word = args.slice(1, -1).join(" ")
-    if (isNaN(count) || count < 1 || count > 50) {
-      return send(chat_id, "❌ Invalid count. Use: /spam hi 10", reply_to)
-    }
-    const spamMsg = Array(count).fill(word).join(" ")
-    return send(chat_id, spamMsg, reply_to)
-  }
-
-  if (text.startsWith("/interval")) {
-    const args = text.split(" ")
-    const sec = parseInt(args.at(-1))
-    const count = parseInt(args.at(-2))
-    const message = args.slice(1, -2).join(" ")
-    if (isNaN(count) || isNaN(sec) || count > 5 || sec > 60) {
-      return send(chat_id, "❌ Use: /interval <message> <count> <seconds> (max 5 msgs)", reply_to)
-    }
-    for (let i = 0; i < count; i++) {
-      await send(chat_id, message, reply_to)
-      await delay(sec * 1000)
-    }
-  }
-
-  if (text.startsWith("/wave")) {
-    const msgText = text.replace("/wave", "").trim()
-    for (let i = 1; i <= msgText.length; i++) {
-      await send(chat_id, msgText.slice(0, i), reply_to)
-      await delay(300)
+    const messageText = parts.slice(1, -1).join(" ")
+    for (let i = 0; i < number; i++) {
+      await sendMessage(chat_id, messageText, reply_to)
     }
   }
 
   res.send("ok")
 })
 
-async function send(chat_id, text, reply_to) {
-  await fetch(`${API}/sendMessage`, {
+async function sendMessage(chat_id, text, reply_to) {
+  await fetch(`${TELEGRAM_API}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -88,10 +50,6 @@ async function send(chat_id, text, reply_to) {
       reply_to_message_id: reply_to
     })
   })
-}
-
-function delay(ms) {
-  return new Promise(res => setTimeout(res, ms))
 }
 
 app.listen(3000, () => console.log("Bot running"))
