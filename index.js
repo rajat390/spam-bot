@@ -5,93 +5,81 @@ const app = express()
 app.use(express.json())
 
 const TOKEN = "7797281430:AAEmrvxBnx5y1irjRsZj2P9ymLL-nR6Sc3c"
-const TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}`
+const API = `https://api.telegram.org/bot${TOKEN}`
 
 app.post("/", async (req, res) => {
-  const update = req.body
-  if (!update.message) return res.send("ok")
+  const msg = req.body.message
+  if (!msg || !msg.text) return res.send("ok")
 
-  const message = update.message
-  const chat_id = message.chat.id
-  const text = message.text || ""
-  const reply_to = message.message_id
+  const chat_id = msg.chat.id
+  const text = msg.text
+  const reply_to = msg.message_id
 
   if (text.startsWith("/start")) {
-    await sendMessage(chat_id, "👋 Welcome! Use /help to see all commands.", reply_to)
+    return send(chat_id, "👋 Welcome! Use /help to view all commands.", reply_to)
   }
 
-  else if (text.startsWith("/help")) {
-    await sendMessage(chat_id, `📖 Commands:
-➤ /text <msg> <number>
-➤ /reverse <msg>
-➤ /uppercase <msg>
-➤ /lowercase <msg>
-➤ /random <min> <max>
-➤ /emoji <word>`, reply_to)
+  if (text.startsWith("/help")) {
+    return send(chat_id,
+      `🛠 Available Commands:
+  /start - Welcome message
+  /help - List commands
+  /text <message> <count> - Send a message N times
+  /spam <word> <count> - Spam a word in one message
+  /interval <message> <count> <seconds> - Send with delay
+  /wave <message> - Typing effect message`, reply_to)
   }
 
-  else if (text.startsWith("/text")) {
-    const parts = text.split(" ")
-    if (parts.length < 3) return sendMessage(chat_id, "❌ Use: /text <message> <number>", reply_to)
-    const number = parseInt(parts[parts.length - 1])
-    if (isNaN(number) || number > 10 || number < 1) return sendMessage(chat_id, "⚠️ Number must be between 1 and 10.", reply_to)
-    const messageText = parts.slice(1, -1).join(" ")
-    for (let i = 0; i < number; i++) await sendMessage(chat_id, messageText, reply_to)
-  }
-
-  else if (text.startsWith("/reverse")) {
-    const input = text.replace("/reverse", "").trim()
-    if (!input) return sendMessage(chat_id, "❌ Use: /reverse <text>", reply_to)
-    await sendMessage(chat_id, input.split("").reverse().join(""), reply_to)
-  }
-
-  else if (text.startsWith("/uppercase")) {
-    const input = text.replace("/uppercase", "").trim()
-    if (!input) return sendMessage(chat_id, "❌ Use: /uppercase <text>", reply_to)
-    await sendMessage(chat_id, input.toUpperCase(), reply_to)
-  }
-
-  else if (text.startsWith("/lowercase")) {
-    const input = text.replace("/lowercase", "").trim()
-    if (!input) return sendMessage(chat_id, "❌ Use: /lowercase <text>", reply_to)
-    await sendMessage(chat_id, input.toLowerCase(), reply_to)
-  }
-
-  else if (text.startsWith("/random")) {
-    const parts = text.split(" ")
-    if (parts.length !== 3) return sendMessage(chat_id, "❌ Use: /random <min> <max>", reply_to)
-    const min = parseInt(parts[1])
-    const max = parseInt(parts[2])
-    if (isNaN(min) || isNaN(max) || min >= max) return sendMessage(chat_id, "⚠️ Provide valid numbers. Example: /random 1 50", reply_to)
-    const result = Math.floor(Math.random() * (max - min + 1)) + min
-    await sendMessage(chat_id, `🎲 Random: ${result}`, reply_to)
-  }
-
-  else if (text.startsWith("/emoji")) {
-    const input = text.replace("/emoji", "").trim().toLowerCase()
-    if (!input) return sendMessage(chat_id, "❌ Use: /emoji <word>", reply_to)
-    const emojiMap = {
-      heart: "❤️",
-      fire: "🔥",
-      smile: "😊",
-      sad: "😢",
-      ok: "👌",
-      wow: "😲",
-      clap: "👏",
-      star: "⭐",
-      love: "😍",
-      thumbs: "👍"
+  if (text.startsWith("/text")) {
+    const args = text.split(" ")
+    const count = parseInt(args.at(-1))
+    const message = args.slice(1, -1).join(" ")
+    if (isNaN(count) || count < 1 || count > 10) {
+      return send(chat_id, "❌ Invalid count. Use: /text Hello 3", reply_to)
     }
-    const words = input.split(" ")
-    const emojiText = words.map(w => emojiMap[w] || w).join(" ")
-    await sendMessage(chat_id, emojiText, reply_to)
+    for (let i = 0; i < count; i++) {
+      await send(chat_id, message, reply_to)
+    }
+  }
+
+  if (text.startsWith("/spam")) {
+    const args = text.split(" ")
+    const count = parseInt(args.at(-1))
+    const word = args.slice(1, -1).join(" ")
+    if (isNaN(count) || count < 1 || count > 50) {
+      return send(chat_id, "❌ Invalid count. Use: /spam hi 10", reply_to)
+    }
+    const spamMsg = Array(count).fill(word).join(" ")
+    return send(chat_id, spamMsg, reply_to)
+  }
+
+  if (text.startsWith("/interval")) {
+    const args = text.split(" ")
+    const sec = parseInt(args.at(-1))
+    const count = parseInt(args.at(-2))
+    const message = args.slice(1, -2).join(" ")
+    if (isNaN(count) || isNaN(sec) || count > 5 || sec > 60) {
+      return send(chat_id, "❌ Use: /interval <message> <count> <seconds> (max 5 msgs)", reply_to)
+    }
+    for (let i = 0; i < count; i++) {
+      await send(chat_id, message, reply_to)
+      await delay(sec * 1000)
+    }
+  }
+
+  if (text.startsWith("/wave")) {
+    const msgText = text.replace("/wave", "").trim()
+    for (let i = 1; i <= msgText.length; i++) {
+      await send(chat_id, msgText.slice(0, i), reply_to)
+      await delay(300)
+    }
   }
 
   res.send("ok")
 })
 
-async function sendMessage(chat_id, text, reply_to) {
-  await fetch(`${TELEGRAM_API}/sendMessage`, {
+async function send(chat_id, text, reply_to) {
+  await fetch(`${API}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -100,6 +88,10 @@ async function sendMessage(chat_id, text, reply_to) {
       reply_to_message_id: reply_to
     })
   })
+}
+
+function delay(ms) {
+  return new Promise(res => setTimeout(res, ms))
 }
 
 app.listen(3000, () => console.log("Bot running"))
