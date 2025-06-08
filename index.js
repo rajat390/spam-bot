@@ -21,14 +21,14 @@ app.post("/", async (req, res) => {
   const isAdmin = !ADMIN_ID || user_id.toString() === ADMIN_ID
 
   if (text.startsWith("/start") && isAdmin) {
-    await sendMessage(chat_id, "👋 Welcome to the bot! Use /text <message> <number> to repeat messages.", reply_to)
+    await sendMessage(chat_id, "👋 Welcome to the bot! Use /spam <message> <number> to repeat messages.", reply_to)
   }
 
   if (text.startsWith("/help") && isAdmin) {
-    await sendMessage(chat_id, "🛠 Commands:\n/start - Welcome Message\n/text <message> <number> - Repeat message\n/help - Command Help", reply_to)
+    await sendMessage(chat_id, "🛠 Commands:\n/start - Welcome Message\n/spam <message> <number> - Repeat message\n/help - Command Help", reply_to)
   }
 
-  if (text.startsWith("/text") && isAdmin) {
+  if (text.startsWith("/spam") && isAdmin) {
     const parts = text.trim().split(" ")
     if (parts.length < 3) return res.send("ok")
     const number = parseInt(parts[parts.length - 1])
