@@ -6,7 +6,7 @@ app.use(express.json())
 
 const TOKEN = "7797281430:AAEmrvxBnx5y1irjRsZj2P9ymLL-nR6Sc3c"
 const TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}`
-const ADMIN_ID = "" // set admin id like "1234567890" or leave blank
+const ADMIN_ID = "" // add admin ID like "1234567890" or leave blank for public access
 
 app.post("/", async (req, res) => {
   const update = req.body
@@ -25,7 +25,7 @@ app.post("/", async (req, res) => {
   }
 
   if (text.startsWith("/help") && isAdmin) {
-    await sendMessage(chat_id, "🛠 Commands:\n/start - Welcome Message\n/text <message> <number> - Repeat message\n/help - Command Help", reply_to)
+    await sendMessage(chat_id, "🛠 Commands:\n/start - Welcome\n/text <HTML message> <count>\nSupports HTML like <b>bold</b>, <i>italic</i>, <a href='https://example.com'>link</a>", reply_to)
   }
 
   if (text.startsWith("/text") && isAdmin) {
@@ -43,7 +43,7 @@ app.post("/", async (req, res) => {
       }
     } else {
       for (let i = 0; i < number; i++) {
-        await sendMessage(chat_id, messageText, reply_to)
+        await sendMessage(chat_id, messageText, reply_to, "HTML")
       }
     }
   }
@@ -51,7 +51,7 @@ app.post("/", async (req, res) => {
   res.send("ok")
 })
 
-async function sendMessage(chat_id, text, reply_to, mode = "Markdown") {
+async function sendMessage(chat_id, text, reply_to, mode = "HTML") {
   await fetch(`${TELEGRAM_API}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
