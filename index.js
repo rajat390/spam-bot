@@ -6,7 +6,7 @@ app.use(express.json())
 
 const TOKEN = "7797281430:AAEmrvxBnx5y1irjRsZj2P9ymLL-nR6Sc3c"
 const TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}`
-const ADMIN_ID = "" // example: "6918300873"
+const ADMIN_ID = "" // set admin id like "6918300873" or leave blank
 
 app.post("/", async (req, res) => {
   const update = req.body
@@ -17,6 +17,7 @@ app.post("/", async (req, res) => {
   const user_id = message.from.id
   const text = message.text || ""
   const reply_to = message.message_id
+
   const isAdmin = !ADMIN_ID || user_id.toString() === ADMIN_ID
 
   if (text.startsWith("/start") && isAdmin) {
@@ -42,7 +43,7 @@ app.post("/", async (req, res) => {
       }
     } else {
       for (let i = 0; i < number; i++) {
-        await sendMessage(chat_id, messageText, reply_to, "HTML")
+        await sendMessage(chat_id, messageText, reply_to)
       }
     }
   }
@@ -50,7 +51,7 @@ app.post("/", async (req, res) => {
   res.send("ok")
 })
 
-async function sendMessage(chat_id, text, reply_to, mode = "HTML") {
+async function sendMessage(chat_id, text, reply_to, mode = "Markdown") {
   await fetch(`${TELEGRAM_API}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
