@@ -6,7 +6,7 @@ app.use(express.json())
 
 const TOKEN = "7797281430:AAEmrvxBnx5y1irjRsZj2P9ymLL-nR6Sc3c"
 const TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}`
-const ADMIN_ID = "" // add admin ID like "1234567890" or leave blank for public access
+const ADMIN_ID = "" // example: "1234567890"
 
 app.post("/", async (req, res) => {
   const update = req.body
@@ -17,7 +17,6 @@ app.post("/", async (req, res) => {
   const user_id = message.from.id
   const text = message.text || ""
   const reply_to = message.message_id
-
   const isAdmin = !ADMIN_ID || user_id.toString() === ADMIN_ID
 
   if (text.startsWith("/start") && isAdmin) {
@@ -25,7 +24,7 @@ app.post("/", async (req, res) => {
   }
 
   if (text.startsWith("/help") && isAdmin) {
-    await sendMessage(chat_id, "🛠 Commands:\n/start - Welcome\n/text <HTML message> <count>\nSupports HTML like <b>bold</b>, <i>italic</i>, <a href='https://example.com'>link</a>", reply_to)
+    await sendMessage(chat_id, "🛠 Commands:\n/start - Welcome Message\n/text <message> <number> - Repeat message\n/help - Command Help", reply_to)
   }
 
   if (text.startsWith("/text") && isAdmin) {
