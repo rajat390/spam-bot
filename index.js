@@ -6,7 +6,7 @@ app.use(express.json())
 
 const TOKEN = "7562186060:AAHerxf5IAjOqYJqIHqX-uKGK9sIhgk9ogI"
 const TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}`
-const ADMIN_ID = "" // set admin id like "1234567890" or leave blank
+const ADMIN_ID = "7541796562" // set admin id like "1234567890" or leave blank
 
 app.post("/", async (req, res) => {
   const update = req.body
